@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绕过视频播放限制</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .control-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+        button {
+            background: #FF6B00;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <iframe id="videoFrame" src="about:blank"></iframe>
+        <div class="control-panel">
+            <button onclick="loadVideo()">加载视频</button>
+            <button onclick="refreshVideo()">刷新视频</button>
+            <button onclick="forcePlay()">强制播放</button>
+        </div>
+    </div>
+
+    <script>
+        // 方案1: 使用 muted 属性先加载，然后取消静音
+        function loadVideo() {
+            const iframe = document.getElementById('videoFrame');
+            // 先加载一个静音版本
+            iframe.src = 'https://www.douyu.com';
+            
+            // 等待页面加载后尝试播放
+            setTimeout(() => {
+                forcePlay();
+            }, 3000);
+        }
+        
+        // 方案2: 强制刷新视频流
+        function refreshVideo() {
+            const iframe = document.getElementById('videoFrame');
+            const currentSrc = iframe.src;
+            iframe.src = 'about:blank';
+            setTimeout(() => {
+                iframe.src = currentSrc;
+                forcePlay();
+            }, 500);
+        }
+        
+        // 方案3: 多种强制播放方法
+        function forcePlay() {
+            const iframe = document.getElementById('videoFrame');
+            
+            try {
+                // 方法1: 尝试通过 postMessage 与iframe通信
+                iframe.contentWindow.postMessage('playVideo', '*');
+            } catch(e) {}
+            
+            try {
+                // 方法2: 模拟用户交互
+                simulateClick(iframe);
+            } catch(e) {}
+            
+            try {
+                // 方法3: 重新加载视频元素
+                reloadVideoElements(iframe);
+            } catch(e) {}
+        }
+        
+        // 模拟点击事件
+        function simulateClick(element) {
+            const rect = element.getBoundingClientRect();
+            const clickEvent = new MouseEvent('click', {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                clientX: rect.left + rect.width / 2,
+                clientY: rect.top + rect.height / 2
+            });
+            element.dispatchEvent(clickEvent);
+        }
+        
+        // 方案4: 使用 Web Audio API 增强音频体验
+        function setupAudioEnhancement() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // 创建音频节点增强体验
+            const source = audioContext.createMediaElementSource(document.createElement('audio'));
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = 1.5; // 增加音量
+            
+            source.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+        }
+        
+        // 方案5: 定期刷新视频帧
+        function startVideoMonitor() {
+            setInterval(() => {
+                const iframe = document.getElementById('videoFrame');
+                try {
+                    // 检查视频是否在播放但画面静止
+                    const videos = iframe.contentDocument.querySelectorAll('video');
+                    videos.forEach(video => {
+                        if (video.paused && !video.muted) {
+                            video.play().catch(e => {
+                                // 如果播放失败，尝试静音播放
+                                video.muted = true;
+                                video.play().catch(() => {});
+                            });
+                        }
+                    });
+                } catch(e) {
+                    // 跨域限制，无法直接访问iframe内容
+                }
+            }, 5000);
+        }
+        
+        // 方案6: 使用替代播放器
+        function createAlternativePlayer() {
+            // 如果iframe无法正常工作，可以尝试使用video.js等替代方案
+            const alternativePlayer = document.createElement('div');
+            alternativePlayer.innerHTML = `
+                <video id="altPlayer" width="100%" height="100%" controls>
+                    <source src="" type="video/mp4">
+                </video>
+            `;
+            document.body.appendChild(alternativePlayer);
+        }
+        
+        // 初始化
+        window.addEventListener('load', () => {
+            loadVideo();
+            setupAudioEnhancement();
+            startVideoMonitor();
+            
+            // 添加键盘快捷键
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    forcePlay();
+                }
+            });
+        });
+        
+        // 监听来自iframe的消息（如果斗鱼支持的话）
+        window.addEventListener('message', (event) => {
+            if (event.data === 'videoReady') {
+                forcePlay();
+            }
+        });
+    </script>
+</body>
+</html>
