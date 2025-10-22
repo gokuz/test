@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>斗鱼直播</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            background-color: #000;
+        }
+        iframe {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <iframe src="https://www.douyu.com" id="douyuFrame"></iframe>
+
+    <script>
+        // 禁用右键菜单
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // 禁用快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+                (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+                (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+            }
+        });
+
+        // 检测开发者工具
+        function checkDevTools() {
+            const threshold = 160;
+            const widthDiff = window.outerWidth - window.innerWidth;
+            const heightDiff = window.outerHeight - window.innerHeight;
+            
+            if (widthDiff > threshold || heightDiff > threshold) {
+                window.location.reload();
+            }
+        }
+
+        // 定期检查
+        setInterval(checkDevTools, 500);
+
+        // 控制台检测
+        (function() {
+            var re = /x/;
+            re.toString = function() {
+                window.location.reload();
+                return '';
+            };
+        })();
+    </script>
+</body>
+</html>
