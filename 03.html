@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车机浏览器视频限制绕过测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #4FC3F7;
+        }
+        
+        .description {
+            font-size: 16px;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+        
+        .content {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .video-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .video-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .video-container {
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            height: 300px;
+        }
+        
+        iframe, .custom-video {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .custom-video {
+            object-fit: cover;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #81C784;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .controls {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.success {
+            background: #4CAF50;
+        }
+        
+        button.success:hover {
+            background: #388E3C;
+        }
+        
+        button.warning {
+            background: #FF9800;
+        }
+        
+        button.warning:hover {
+            background: #F57C00;
+        }
+        
+        .status-panel {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-value {
+            font-weight: bold;
+        }
+        
+        .status-value.working {
+            color: #4CAF50;
+        }
+        
+        .status-value.not-working {
+            color: #F44336;
+        }
+        
+        .log {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px 0;
+        }
+        
+        .log-time {
+            color: #9E9E9E;
+        }
+        
+        .log-info {
+            color: #4FC3F7;
+        }
+        
+        .log-success {
+            color: #4CAF50;
+        }
+        
+        .log-error {
+            color: #F44336;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>车机浏览器视频限制绕过测试</h1>
+            <p class="description">测试多种绕过车机浏览器视频播放限制的技术方案</p>
+        </header>
+        
+        <div class="content">
+            <div class="video-section">
+                <div>
+                    <div class="section-title">🔴 直播流测试 (iframe)</div>
+                    <div class="video-container">
+                        <iframe id="liveFrame" src="about:blank"></iframe>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="section-title">🎬 本地视频测试</div>
+                    <div class="video-container">
+                        <video id="localVideo" class="custom-video" controls muted>
+                            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                            您的浏览器不支持视频播放
+                        </video>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <button onclick="loadWithMutedFirst()" class="success">
+                        🔊 静音优先加载
+                    </button>
+                    <button onclick="forceVideoPlayback()" class="warning">
+                        ⚡ 强制视频播放
+                    </button>
+                    <button onclick="refreshVideoStream()">
+                        🔄 刷新视频流
+                    </button>
+                </div>
+                
+                <div class="control-group">
+                    <button onclick="simulateUserInteraction()" class="success">
+                        👆 模拟用户交互
+                    </button>
+                    <button onclick="useCanvasRenderer()" class="warning">
+                        🎨 Canvas渲染器
+                    </button>
+                    <button onclick="useWebGLRenderer()">
+                        ⚡ WebGL渲染器
+                    </button>
+                </div>
+                
+                <div class="control-group">
+                    <button onclick="useWorkerForVideo()">
+                        🔧 Worker视频处理
+                    </button>
+                    <button onclick="usePictureInPicture()" class="success">
+                        📺 画中画模式
+                    </button>
+                    <button onclick="useOffscreenVideo()" class="warning">
+                        🖥️ 离屏视频
+                    </button>
+                </div>
+            </div>
+            
+            <div class="status-panel">
+                <h3 class="section-title">📊 状态监控</h3>
+                <div class="status-item">
+                    <span>视频元素状态:</span>
+                    <span id="videoStatus" class="status-value not-working">未播放</span>
+                </div>
+                <div class="status-item">
+                    <span>音频状态:</span>
+                    <span id="audioStatus" class="status-value not-working">静音</span>
+                </div>
+                <div class="status-item">
+                    <span>当前绕过方法:</span>
+                    <span id="bypassMethod" class="status-value">无</span>
+                </div>
+                <div class="status-item">
+                    <span>帧率:</span>
+                    <span id="frameRate" class="status-value">0 FPS</span>
+                </div>
+                
+                <div class="log">
+                    <div id="logContainer"></div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>安全测试工具 - 车机浏览器视频限制绕过测试 | 仅供安全测试使用</p>
+        </footer>
+    </div>
+
+    <script>
+        // 全局变量
+        let videoElements = [];
+        let bypassAttempts = 0;
+        let frameCount = 0;
+        let lastTime = Date.now();
+        let fps = 0;
+        
+        // 日志系统
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const time = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-${type}">${message}</span>`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('页面加载完成', 'success');
+            initializeVideoElements();
+            startStatusMonitor();
+            startFrameRateCounter();
+        });
+        
+        // 初始化视频元素
+        function initializeVideoElements() {
+            // 获取所有视频元素
+            videoElements = [
+                document.getElementById('localVideo'),
+                document.getElementById('liveFrame').contentWindow?.document?.querySelector('video')
+            ].filter(v => v);
+            
+            addLog(`找到 ${videoElements.length} 个视频元素`, 'info');
+        }
+        
+        // 方法1: 静音优先加载
+        function loadWithMutedFirst() {
+            addLog('尝试静音优先加载方法...', 'info');
+            bypassAttempts++;
+            document.getElementById('bypassMethod').textContent = '静音优先加载';
+            document.getElementById('bypassMethod').className = 'status-value working';
+            
+            const iframe = document.getElementById('liveFrame');
+            iframe.src = 'https://www.douyu.com';
+            
+            // 先尝试静音播放
+            videoElements.forEach(video => {
+                if (video.muted === false) {
+                    video.muted = true;
+                }
+                
+                const playPromise = video.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        addLog('静音播放成功', 'success');
+                        // 延迟后尝试取消静音
+                        setTimeout(() => {
+                            video.muted = false;
+                            addLog('尝试取消静音', 'info');
+                        }, 2000);
+                    }).catch(error => {
+                        addLog(`静音播放失败: ${error}`, 'error');
+                    });
+                }
+            });
+        }
+        
+        // 方法2: 强制视频播放
+        function forceVideoPlayback() {
+            addLog('尝试强制视频播放...', 'info');
+            bypassAttempts++;
+            document.getElementById('bypassMethod').textContent = '强制播放';
+            document.getElementById('bypassMethod').className = 'status-value working';
+            
+            videoElements.forEach(video => {
+                // 尝试多种播放方法
+                const playAttempts = [
+                    () => video.play(),
+                    () => { video.currentTime = 0; return video.play(); },
+                    () => { video.load(); return video.play(); }
+                ];
+                
+                for (let attempt of playAttempts) {
+                    try {
+                        const result = attempt();
+                        if (result && typeof result.then === 'function') {
+                            result.then(() => {
+                                addLog('强制播放成功', 'success');
+                            }).catch(e => {
+                                addLog(`播放尝试失败: ${e}`, 'error');
+                            });
+                            break;
+                        }
+                    } catch (e) {
+                        addLog(`播放异常: ${e}`, 'error');
+                    }
+                }
+            });
+        }
+        
+        // 方法3: 刷新视频流
+        function refreshVideoStream() {
+            addLog('刷新视频流...', 'info');
+            bypassAttempts++;
+            document.getElementById('bypassMethod').textContent = '流刷新';
+            document.getElementById('bypassMethod').className = 'status-value working';
+            
+            const iframe = document.getElementById('liveFrame');
+            const currentSrc = iframe.src;
+            
+            iframe.src = 'about:blank';
+            setTimeout(() => {
+                iframe.src = currentSrc || 'https://www.douyu.com';
+                addLog('视频流刷新完成', 'success');
+                
+                // 延迟后尝试播放
+                setTimeout(() => {
+                    forceVideoPlayback();
+                }, 1000);
+            }, 500);
+        }
+        
+        // 方法4: 模拟用户交互
+        function simulateUserInteraction() {
+            addLog('模拟用户交互...', 'info');
+            bypassAttempts++;
+            document.getElementById('bypassMethod').textContent = '模拟交互';
+            document.getElementById('bypassMethod').className = 'status-value working';
+            
+            // 创建并分发点击事件
+            const clickEvent = new MouseEvent('click', {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                clientX: 100,
+                clientY: 100
+            });
+            
+            videoElements.forEach(video => {
+                // 直接对视频元素模拟点击
+                video.dispatchEvent(clickEvent);
+                
+                // 尝试全屏请求（某些浏览器需要用户交互）
+                if (video.requestFullscreen) {
+                    video.requestFullscreen().catch(e => {
+                        addLog(`全屏请求失败: ${e}`, 'error');
+                    });
+                }
+            });
+            
+            // 添加一个可见的点击效果
+            const clickEffect = document.createElement('div');
+            clickEffect.style.cssText = `
+                position: fixed;
+                width: 20px;
+                height: 20px;
+                background: rgba(255, 255, 0, 0.7);
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 10000;
+                animation: clickAnimation 0.5s forwards;
+            `;
+            
+            document.body.appendChild(clickEffect);
+            
+            setTimeout(() => {
+                document.body.removeChild(clickEffect);
+            }, 500);
+            
+            // 尝试播放
+            setTimeout(() => {
+                forceVideoPlayback();
+            }, 100);
+        }
+        
+        // 方法5: 使用Canvas渲染器
+        function useCanvasRenderer() {
+            addLog('启动Canvas渲染器...', 'info');
+            bypassAttempts++;
+            document.getElementById('bypassMethod').textContent = 'Canvas渲染';
+            document.getElementById('bypassMethod').className = 'status-value working';
+            
+            const video = document.getElementById('localVideo');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 360;
+            canvas.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+            `;
+            
+            const container = video.parentElement;
+            container.style.position = 'relative';
+            container.appendChild(canvas);
+            
+            video.style.display = 'none';
+            
+            function drawVideoFrame() {
+                if (video.readyState >= video.HAVE_CURRENT_DATA) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    frameCount++;
+                }
+                requestAnimationFrame(drawVideoFrame);
+            }
+            
+            video.addEventListener('play', () => {
+                drawVideoFrame();
+            });
+            
+            video.play().catch(e => {
+                addLog(`Canvas渲染器播放失败: ${e}`, 'error');
+            });
+        }
+        
+        // 方法6: 使用WebGL渲染器
+        function useWebGLRenderer() {
+            addLog('启动WebGL渲染器...', 'info');
+            addLog('WebGL渲染器需要更复杂的实现', 'info');
+            // 实际实现需要创建WebGL上下文和着色器
+            // 这里只是示意
+            simulateUserInteraction();
+        }
+        
+        // 方法7: 使用Worker处理视频
+        function useWorkerForVideo() {
+            addLog('尝试使用Worker处理视频...', 'info');
+            // 实际实现需要创建Web Worker处理视频帧
+            // 这里只是示意
+            forceVideoPlayback();
+        }
+        
+        // 方法8: 使用画中画模式
+        function usePictureInPicture() {
+            addLog('尝试画中画模式...', 'info');
+            
+            videoElements.forEach(video => {
+                if (document.pictureInPictureEnabled && !document.pictureInPictureElement) {
+                    video.requestPictureInPicture()
+                        .then(() => {
+                            addLog('画中画模式启动成功', 'success');
+                            video.play();
+                        })
+                        .catch(error => {
+                            addLog(`画中画失败: ${error}`, 'error');
+                        });
+                } else {
+                    addLog('画中画不支持或已在画中画模式', 'info');
+                }
+            });
+        }
+        
+        // 方法9: 使用离屏视频
+        function useOffscreenVideo() {
+            addLog('尝试离屏视频技术...', 'info');
+            // 离屏视频需要OffscreenCanvas API支持
+            // 这里只是示意
+            forceVideoPlayback();
+        }
+        
+        // 状态监控
+        function startStatusMonitor() {
+            setInterval(() => {
+                videoElements.forEach(video => {
+                    const videoStatus = document.getElementById('videoStatus');
+                    const audioStatus = document.getElementById('audioStatus');
+                    
+                    if (video.readyState > 0) {
+                        videoStatus.textContent = video.paused ? '已暂停' : '播放中';
+                        videoStatus.className = video.paused ? 'status-value not-working' : 'status-value working';
+                        
+                        audioStatus.textContent = video.muted ? '静音' : '有声音';
+                        audioStatus.className = video.muted ? 'status-value not-working' : 'status-value working';
+                    }
+                });
+            }, 1000);
+        }
+        
+        // 帧率计算
+        function startFrameRateCounter() {
+            setInterval(() => {
+                const now = Date.now();
+                const delta = now - lastTime;
+                
+                if (delta >= 1000) {
+                    fps = Math.round((frameCount * 1000) / delta);
+                    document.getElementById('frameRate').textContent = `${fps} FPS`;
+                    frameCount = 0;
+                    lastTime = now;
+                }
+            }, 500);
+        }
+        
+        // 添加键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            switch(e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    forceVideoPlayback();
+                    break;
+                case 'KeyR':
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        refreshVideoStream();
+                    }
+                    break;
+                case 'KeyM':
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        loadWithMutedFirst();
+                    }
+                    break;
+            }
+        });
+        
+        // 添加样式动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes clickAnimation {
+                0% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+                100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
